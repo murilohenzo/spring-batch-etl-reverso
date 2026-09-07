@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: etl-reverso
+  main:
+    web-application-type: none
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/etl_reverso?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true}
+    username: ${DB_USER:batch}
+    password: ${DB_PASSWORD:batch}
+    hikari:
+      maximum-pool-size: 4
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:mysql/ddl/00-schema.sql
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      name: etlReversoJob
+    page-size: ${ETL_REVERSO_PAGE_SIZE:1000}
+    chunk-size: ${ETL_REVERSO_CHUNK_SIZE:1000}
+
+simulacao:
+  page-size: 1000
+  chunk-size: 1000

@@ -1,0 +1,10 @@
+MySQL 8.4; pageSize=1000; chunkSize=1000
+D0: StepExecution: id=10, version=54, name=volumeStep, status=COMPLETED, exitStatus=COMPLETED, readCount=50000, filterCount=0, writeCount=50000, readSkipCount=0, writeSkipCount=0, processSkipCount=0, commitCount=50, rollbackCount=0, exitDescription=
+D1: StepExecution: id=11, version=10, name=volumeStep, status=COMPLETED, exitStatus=COMPLETED, readCount=6200, filterCount=0, writeCount=6200, readSkipCount=0, writeSkipCount=0, processSkipCount=0, commitCount=7, rollbackCount=0, exitDescription=
+Repeticao: StepExecution: id=12, version=4, name=volumeStep, status=COMPLETED, exitStatus=COMPLETED, readCount=0, filterCount=0, writeCount=0, readSkipCount=0, writeSkipCount=0, processSkipCount=0, commitCount=0, rollbackCount=0, exitDescription=
+EXPLAIN ANALYZE antes do D1:
+-> Limit: 1000 row(s)  (cost=13792 rows=1000) (actual time=28.2..37.1 rows=1000 loops=1)
+    -> Filter: ((p.cdServicoOrigem is null) or (p.dtUltimoSucesso is null) or (s.dtModificacao > p.dtUltimoSucesso))  (cost=13792 rows=1000) (actual time=28.2..37 rows=1000 loops=1)
+        -> Nested loop left join  (cost=13792 rows=1000) (actual time=0.0571..36.3 rows=7610 loops=1)
+            -> Index scan on s using PRIMARY  (cost=3.73 rows=1000) (actual time=0.0297..2.4 rows=7610 loops=1)
+            -> Single-row index lookup on p using uk_processamento_saas_cd_servico_origem (cdServicoOrigem=s.cdServicoOrigem)  (cost=0.25 rows=1) (actual time=0.0043..0.00432 rows=1 loops=7610)

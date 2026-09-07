@@ -1,0 +1,22 @@
+services:
+  mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: etl_reverso
+      MYSQL_USER: batch
+      MYSQL_PASSWORD: batch
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./src/main/resources/mysql/ddl/00-schema.sql:/docker-entrypoint-initdb.d/00-schema.sql:ro
+    command: ["--default-time-zone=+00:00"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  mysql_data:
