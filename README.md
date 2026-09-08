@@ -117,7 +117,7 @@ flowchart LR
 
 Define o `Job`, o `Step` e os beans do pipeline; valida o parâmetro `carga` via `EtlReversoJobParametersValidator`. Deixa o Spring Boot configurar o repositório JDBC, o `DataSource` único e o `PlatformTransactionManager`.
 
-> **Atenção:** `GovItemReader` implementa `StepExecutionListener` para emitir o log de resumo (`SIMULACAO_RESUMO`) ao final do step. Isso exige `.listener(reader)` explícito no `StepBuilder` — `.reader(reader)` sozinho registra a instância apenas como `ItemStream` (necessário para o `saveState`/checkpoint), não como listener de step. Sem essa linha, o log de resumo nunca é emitido.
+> **Atenção:** `ServicoGovernancaItemReader` implementa `StepExecutionListener` para emitir o log de resumo (`SIMULACAO_RESUMO`) ao final do step. Isso exige `.listener(reader)` explícito no `StepBuilder` — `.reader(reader)` sozinho registra a instância apenas como `ItemStream` (necessário para o `saveState`/checkpoint), não como listener de step. Sem essa linha, o log de resumo nunca é emitido.
 
 ### `batch/reader/GovItemReader`
 
@@ -381,7 +381,7 @@ Os nomes legados dos exemplos iniciais (`id`, `cdServico`, `nome`, `status`) for
 
 ### Performance e vazão
 
-- **Paralelizar a leitura (partitioning de Step).** Hoje o `governancaStep` é single-threaded — `GovItemReader` acumula `pageQueries`/`queryNanos` em campos `long` simples, o que só é seguro nesse regime. Uma evolução natural é usar `PartitionHandler` (`TaskExecutorPartitionHandler` local, ou remoto via `RemotePartitioningManager`/`Worker`) particionando o intervalo de `cdServicoGovernanca` em faixas (`ColumnRangePartitioner` ou custom), com um `GovItemReader` por partição lendo sua própria faixa em paralelo. Isso aumenta a vazão de leitura proporcionalmente ao número de partições, especialmente relevante nos cenários de volume (50k+ registros).
+- **Paralelizar a leitura (partitioning de Step).** Hoje o `governancaStep` é single-threaded — `ServicoGovernancaItemReader` acumula `pageQueries`/`queryNanos` em campos `long` simples, o que só é seguro nesse regime. Uma evolução natural é usar `PartitionHandler` (`TaskExecutorPartitionHandler` local, ou remoto via `RemotePartitioningManager`/`Worker`) particionando o intervalo de `cdServicoGovernanca` em faixas (`ColumnRangePartitioner` ou custom), com um `ServicoGovernancaItemReader` por partição lendo sua própria faixa em paralelo. Isso aumenta a vazão de leitura proporcionalmente ao número de partições, especialmente relevante nos cenários de volume (50k+ registros).
     - Pré-requisito: trocar os contadores do reader por `AtomicLong` (ou migrar a métrica para `StepExecutionListener` agregado no `Job`, coletando o `ExecutionContext` de cada partição no `afterJob`), já que múltiplas instâncias do reader rodarão concorrentemente.
     - Cuidado: o `WHERE` atual (`LEFT JOIN` + `OR`) já pode examinar grande parte da tabela por página; particionar sem antes otimizar essa cláusula (ver abaixo) pode apenas paralelizar um full-scan, sem ganho real.
 - **Revisar o predicado incremental antes de paralelizar.** Como o próprio README observa, `readCount` baixo não implica custo de SQL baixo. Vale medir com `EXPLAIN ANALYZE` se um índice composto (`dtModificacao`) ou uma reformulação do `LEFT JOIN`/`OR` (ex.: `UNION` de dois `SELECT`s mais seletivos) reduz linhas examinadas antes de investir em paralelismo.
